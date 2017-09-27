@@ -28,6 +28,7 @@ The steps of this project are the following:
 [image_luv]: ./output_images/binary_luv.png "LUV - V Channel"
 [image_lab]: ./output_images/binary_lab.png "LAB - B Channel"
 [image_pipeline]: ./output_images/binary_pipeline.png "Pipeline Output"
+[image_birds_eye]: ./output_images/birds_eye_view.png "Perspective Transform"
 [image5]: ./examples/color_fit_lines.jpg "Fit Visual"
 [image6]: ./examples/example_output.jpg "Output"
 [video1]: ./project_video.mp4 "Video"
@@ -92,33 +93,44 @@ Here is the output of the pipeline where each color is the contribution of the v
 
 #### 3. Describe how (and identify where in your code) you performed a perspective transform and provide an example of a transformed image.
 
-The code for my perspective transform includes a function called `warper()`, which appears in lines 1 through 8 in the file `example.py` (output_images/examples/example.py) (or, for example, in the 3rd code cell of the IPython notebook).  The `warper()` function takes as inputs an image (`img`), as well as source (`src`) and destination (`dst`) points.  I chose the hardcode the source and destination points in the following manner:
-
-```python
-src = np.float32(
-    [[(img_size[0] / 2) - 55, img_size[1] / 2 + 100],
-    [((img_size[0] / 6) - 10), img_size[1]],
-    [(img_size[0] * 5 / 6) + 60, img_size[1]],
-    [(img_size[0] / 2 + 55), img_size[1] / 2 + 100]])
-dst = np.float32(
-    [[(img_size[0] / 4), 0],
-    [(img_size[0] / 4), img_size[1]],
-    [(img_size[0] * 3 / 4), img_size[1]],
-    [(img_size[0] * 3 / 4), 0]])
-```
-
-This resulted in the following source and destination points:
+The code for my perspective transform includes a function called `warper()`, which appears in cell [20].  The `warper()` function takes as inputs an image (`img`), as well as source (`src`) and destination (`dst`) points.  I chose a hardcoded source and destination points:
 
 | Source        | Destination   | 
 |:-------------:|:-------------:| 
-| 585, 460      | 320, 0        | 
-| 203, 720      | 320, 720      |
-| 1127, 720     | 960, 720      |
-| 695, 460      | 960, 0        |
+| 545,485       | 450,0         | 
+| 735,485       | 750,0         |
+| 1065,695      | 750,720       |
+| 245,695       | 450,720       |
 
-I verified that my perspective transform was working as expected by drawing the `src` and `dst` points onto a test image and its warped counterpart to verify that the lines appear parallel in the warped image.
+```python
+def warper(img, 
+           src=np.float32([(545,485),
+                  (735,485), 
+                  (1065,695),
+                  (245,695) 
+                  ]), 
+           dst = np.float32([(450,0),
+                  (1200-450,0),
+                  (1200-450,720),
+                  (450,720)
+                  ])
+          ):
 
-![alt text][image4]
+    img_size = (img.shape[1], img.shape[0])
+    M = cv2.getPerspectiveTransform(src, dst)
+    Minv = cv2.getPerspectiveTransform(dst, src)
+    warped = cv2.warpPerspective(img, M, img_size, flags=cv2.INTER_NEAREST)  # keep same size as input image
+
+    return warped,M,Minv
+```
+
+It uses `cv2.getPerspectiveTransform()` to get the following transform matrices, which is basically used to project the image from one perspective to another:
+- **transform matrix (M)** is used to transform images from normal view to Birds-Eye-View
+- **inverse transform matrix(Minv)** is used to transform images from Birds-Eye-View back to normal view, this is used for generating the lane overlay and bring it back to augment the original image
+
+I verified that my perspective transform was working as expected by drawing the `src` and `dst` points onto a test image and its warped counterpart to verify that the lines appear parallel in the warped image. Here, I used the test image included as sample in the repository (test_images/straight_lines1.jpg).
+
+![alt text][image_birds_eye]
 
 
 #### 4. Describe how (and identify where in your code) you identified lane-line pixels and fit their positions with a polynomial?
