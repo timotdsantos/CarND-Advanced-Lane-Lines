@@ -3,6 +3,10 @@
 
 
 The goal of this project is to write a software pipeline to identify the lane boundaries in a video. 
+The deliverables could be accessed here:
+- [README](https://github.com/timotdsantos/CarND-Advanced-Lane-Lines/blob/master/README.md) - this is the writeup and rubric discussion
+- [Advanced_Lane_Lines.ipynb](https://github.com/timotdsantos/CarND-Advanced-Lane-Lines/blob/master/Advanced_Lane_Lines.ipynb) - contains the codes 
+- [video_output.mp4](./video_output.mp4) - the final video output with lane boundaries
 
 ---
 
@@ -345,7 +349,7 @@ The problems above causes false-positives in the detected pixel points. The main
 - The ROI method uses the variable **margin** to check N number of pixels on the right and left of the previous fitted line. In instances where there's an adjacent car, there's chance that the adjacent car may be detected. In order to fix this, the margin was chosen to be at an optimal width to minimize false positives.
 - The coordinates of the polynomial fit is not updated using the current detected line. To prevent erratic change in the polynomial coordinates, an exponential weighted average function is applied. This practically gets the average of the past instances, but gives more weight to the current coordinates. This approach was chosen give more importance to the most recent detection, and to avoid having to keep track of a past coefficients. The formula for the EWMA is shown below:
 
-``EWMAt=λYt+(1−λ)EWMAt−1 ; λ=0.7 ; for t=1,2,…,n ``
+``EWMA(t)=λY(t)+(1−λ)EWMA(t−1) ; λ=0.7 ; for t=1,2,…,n ``
 
 
 Other possible improvements:
