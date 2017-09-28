@@ -106,21 +106,21 @@ The code for my perspective transform includes a function called `warper()`, whi
 
 | Source        | Destination   | 
 |:-------------:|:-------------:| 
-| 545,485       | 450,0         | 
-| 735,485       | 750,0         |
-| 1065,695      | 750,720       |
+| 588,455       | 450,0         | 
+| 698,455       | 830,0         |
+| 1065,695      | 830,720       |
 | 245,695       | 450,720       |
 
 ```python
 def warper(img, 
-           src=np.float32([(545,485),
-                  (735,485), 
-                  (1065,695),
-                  (245,695) 
-                  ]), 
+           src=np.float32([(588,455),
+                   (698,455), 
+                   (1065,695),
+                   (245,695) 
+                   ]) , 
            dst = np.float32([(450,0),
-                  (1200-450,0),
-                  (1200-450,720),
+                  (1280-450,0),
+                  (1280-450,720),
                   (450,720)
                   ])
           ):
@@ -282,8 +282,8 @@ sliding_window(self,image)
 
 The radius of curvature is computed in the `get_curvature()` method of the Lane class in cells [32] and [33]. The pixel values of the lane are scaled into meters using the scaling factors defined as follows:
 
-ym_per_pix = 30/720 # meters per pixel in y dimension
-xm_per_pix = 3.7/700 # meteres per pixel in x dimension
+**ym_per_pix = 3/90** # meters per pixel in y dimension (the dash line is 3m, the birds eye view length of the dash line is 90px)
+**xm_per_pix = 3.7/380** # meteres per pixel in x dimension (3.7m, the birds eye view width of the lane is 380 pixels)
 
 These values are then used to compute the polynomial coefficients in meters and then the formula given in the lectures and in the linked [tutorial](https://www.intmath.com/applications-differentiation/8-radius-curvature.php) is used to compute the radius of curvature.
 
@@ -330,6 +330,7 @@ Among the challenges that were encountered were the following:
 - discontinuous line (dashed-line)
 - gutter/road-edge gets detected as a lane
 - other noise
+- the meter-to-pixel ratios were initially off, make sure to correctly compute them based on the birds-eye-view of known measure 
 
 The problems above causes false-positives in the detected pixel points. The main approach was to reject these 'faulty' or 'suspect' fitted lines, and revert to a previously accepted lines. This is acceptable because cameras usually take a short time between frames (at 23 fps, that's 1/23 second between frames), and it's improbable to have drastic change in curvature or lane
 
@@ -351,6 +352,7 @@ The problems above causes false-positives in the detected pixel points. The main
 
 ``EWMA(t)=λY(t)+(1−λ)EWMA(t−1) ; λ=0.7 ; for t=1,2,…,n ``
 
+- Some erratic behavior that happens when there's noise was solved when I changed the size of the polygon to a bigger one. By doing this, there's more pixels from the line that gets detected, hence, less likely that the adjacent objects get detected when sliding window histogram is calculated.
 
 Other possible improvements:
 - we could use a feedback loop or look into control theory to prevent erratic lane fitting output
