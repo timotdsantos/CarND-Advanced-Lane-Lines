@@ -6,7 +6,7 @@ The goal of this project is to write a software pipeline to identify the lane bo
 
 ---
 
-**Advanced Lane Finding Project**
+### Advanced Lane Finding Project
 
 The steps of this project are the following:
 
@@ -46,7 +46,7 @@ The steps of this project are the following:
 
 ### Writeup 
 
-#### 1. This Readme is a detailed writeup of the project.  The project notebook which contains the code may be found here [writeup template](https://github.com/udacity/CarND-Advanced-Lane-Lines/blob/master/writeup_template.md), and will be referenced in the discussion.  
+#### 1. This [README](https://github.com/timotdsantos/CarND-Advanced-Lane-Lines/blob/master/README.md) is a detailed writeup of the project.  The project notebook which contains the code may be found here [Advanced_Lane_Lines.ipynb](https://github.com/timotdsantos/CarND-Advanced-Lane-Lines/blob/master/Advanced_Lane_Lines.ipynb) and will be referenced in the discussion. 
 
 ### Camera Calibration
 
@@ -91,6 +91,7 @@ Finally, the pipeline I used for creating the binary image is composed of the fo
 - **HSV, V-Channel**  -  It performs well at capturing the yellow line.
 - **Sobel X** - performs the derivative on the x-axis to accentuate lines away from horizontal, this is effective in removing non-vertical lines like cars and shadows
 
+The code implementation is available in code cell [17].
 Here is the output of the pipeline where each color is the contribution of the various color transform layers.
 ![alt text][image_pipeline]
 
@@ -148,21 +149,21 @@ There are two methods I implemented for of the lane-line detection:
 - Region of Interest Update Method
 
 
-##### The Sliding Window Search
+#### The Sliding Window Search
 The sliding window method is best implemented when no line has been detected yet, or the previous detections have been rejected. We run the search on the Bird's Eye View of the Binary Image.
 
 **These are the main parts which can be found in code cell [25] and the reusable function sliding_window() can be found in [26]:**
 
-**1. Find the peaks in the pixel histogram for the left and right halves of the image** - ideally there are 2 peaks for each line which can be found in the left and right half of the image
+**i. Find the peaks in the pixel histogram for the left and right halves of the image** - ideally there are 2 peaks for each line which can be found in the left and right half of the image
 ```python
 midpoint = np.int(histogram.shape[0]/2)
 leftx_base = np.argmax(histogram[:midpoint])
 rightx_base = np.argmax(histogram[midpoint:]) + midpoint
 ```
-**2. Use a sliding window as mask, create a list of pixels belonging to left and right line.** -  Starting from the histogram peak. From the mask, collect the nonzero pixels that belong to the left and right lines 
+**ii. Use a sliding window as mask, create a list of pixels belonging to left and right line.** -  Starting from the histogram peak. From the mask, collect the nonzero pixels that belong to the left and right lines 
 
 
-**3. Fit a second order polynomial to each line**
+**iii. Fit a second order polynomial to each line**
 
 ```python
 left_fit = np.polyfit(lefty, leftx, 2)
@@ -172,13 +173,13 @@ right_fit = np.polyfit(righty, rightx, 2)
 Below are the histogram and illustration of the sliding window search.
 ![alt text][image_sliding_window]
 
-##### Region of Interest Update Method
+#### Region of Interest Update Method
 In this method, we use the previously identified points (and fitted as lines) as starting point for scanning nonzero pixels. 
 We run the search on the Bird's Eye View of the Binary Image. 
 
 These are the main parts which can be found in code cell [27]. The reusable function update_lanes() can be found in [28]:
 
-**1. Look for nonzero pixels from each line pixels from the previous frame** 
+**i. Look for nonzero pixels from each line pixels from the previous frame** 
 ```python
 left_lane_inds = ((nonzerox > (left_fit[0]*(nonzeroy**2) + left_fit[1]*nonzeroy + 
 left_fit[2] - margin)) & (nonzerox < (left_fit[0]*(nonzeroy**2) + 
@@ -187,7 +188,7 @@ left_fit[1]*nonzeroy + left_fit[2] + margin)))
 ... do for right line
 ```
 
-**2. Fit a second order polynomial to each line**
+**ii. Fit a second order polynomial to each line**
 
 ```python
 left_fit = np.polyfit(lefty, leftx, 2)
@@ -221,6 +222,8 @@ class Line():
         #y values for fitted line
         self.ploty = None
 ```
+
+#### LANE Class
 
 The class `Lane()` was created to store the left and right lines, store other characteristics that will be necessary when processing succeeding frames in the video, and integrating the steps in the lane detection workflow. It can be seen in the code cell [33].
 
@@ -299,9 +302,6 @@ I implemented this step in lines cell [34] in the function `return_line()`.  Her
 
 ![alt text][image_lane]
 
-#### 7. Video Pipeline Design
-
-The video is treated one frame at a time. 
 
 ---
 
@@ -318,4 +318,38 @@ Here's a [link to my video result](./video_output.mp4)
 
 #### 1. Briefly discuss any problems / issues you faced in your implementation of this project.  Where will your pipeline likely fail?  What could you do to make it more robust?
 
-Here I'll talk about the approach I took, what techniques I used, what worked and why, where the pipeline might fail and how I might improve it if I were going to pursue this project further.  
+Among the challenges that were encountered were the following:
+- non-uniform road color
+- non-uniform light and shading conditions (e.g. tree/leaves shading)
+- line is reflected on adjacent car
+- adjacent car is not completely filtered out by the masks
+- discontinuous line (dashed-line)
+- gutter/road-edge gets detected as a lane
+- other noise
+
+The problems above causes false-positives in the detected pixel points. The main approach was to reject these 'faulty' or 'suspect' fitted lines, and revert to a previously accepted lines. This is acceptable because cameras usually take a short time between frames (at 23 fps, that's 1/23 second between frames), and it's improbable to have drastic change in curvature or lane
+
+**SANITY CHECKS** . were done to accept or reject the detected pixels and the fitted line that is produced. It can be found in code cell [33] and [35] in the `update_()` and `process_image` methods. 
+
+#### Here are rules to be checked:
+- Mean distance between left and right fitted lines should be within acceptable range based on the expected lane widths
+- The width of the bottom points of the line (closest to the car) are within acceptable range based on expected lane width
+- Radius of curvature of left and right lines have a minimum threshold, based on expected lane curvature
+- The standard deviation of distance between left and right points are below a threshold. Higher standard deviation means there might be a lot of noise other than the line
+- The radius of curvature for the right and left lines should be close to each other since the lines are supposed to be parallel.
+- Lane width of top edge should be close to the width of the bottom edge
+
+**Mitigation**
+- When the fitted line do not pass the sanity check, the current detected line is discarded and the previous fitted lines are used
+- The number of consecutive discarded fitted lines are logged. If it reaches a certain number (i.e. 20 consecutive undetected lines, in a video with 23 fps this is less than 1 second worth), the **sliding window search method** is triggered instead of the ROI method.
+- The ROI method uses the variable **margin** to check N number of pixels on the right and left of the previous fitted line. In instances where there's an adjacent car, there's chance that the adjacent car may be detected. In order to fix this, the margin was chosen to be at an optimal width to minimize false positives.
+- The coordinates of the polynomial fit is not updated using the current detected line. To prevent erratic change in the polynomial coordinates, an exponential weighted average function is applied. This practically gets the average of the past instances, but gives more weight to the current coordinates. This approach was chosen give more importance to the most recent detection, and to avoid having to keep track of a past coefficients. The formula for the EWMA is shown below:
+
+``EWMAt=λYt+(1−λ)EWMAt−1 ; λ=0.7 ; for t=1,2,…,n ``
+
+
+Other possible improvements:
+- we could use a feedback loop or look into control theory to prevent erratic lane fitting output
+- other color channels and preprocessing may be considered to be robust to noise and various lighting condition
+- the transformation points (src, dst) could be made adaptive using lane/edge detection instead of hard coded value
+
