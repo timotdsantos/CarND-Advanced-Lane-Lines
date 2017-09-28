@@ -282,7 +282,7 @@ sliding_window(self,image)
 
 The radius of curvature is computed in the `get_curvature()` method of the Lane class in cells [32] and [33]. The pixel values of the lane are scaled into meters using the scaling factors defined as follows:
 
-**ym_per_pix = 3/90** # meters per pixel in y dimension (the dash line is 3m, the birds eye view length of the dash line is 90px)
+**ym_per_pix = 3/95** # meters per pixel in y dimension (the dash line is 3m, the birds eye view length of the dash line is 90px)
 **xm_per_pix = 3.7/380** # meteres per pixel in x dimension (3.7m, the birds eye view width of the lane is 380 pixels)
 
 These values are then used to compute the polynomial coefficients in meters and then the formula given in the lectures and in the linked [tutorial](https://www.intmath.com/applications-differentiation/8-radius-curvature.php) is used to compute the radius of curvature.
